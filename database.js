@@ -14,40 +14,36 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false },
 });
 
-// API endpoint to fetch data
+let lastScannedRFID = ""; 
+
 app.get('/students', async (req, res) => {
-  try {
     const result = await pool.query('SELECT * FROM student_info');
     res.json(result.rows);
-  } catch (error) {
-    console.error('Error fetching data:', error);
-    res.status(500).send('Error fetching data');
-  }
 });
 
-app.put('/new_student', async (req, res) => {
-  const { student_name, rfid, status } = req.body;
+app.post('/new_student', async (req, res) => {
+    const { student_name, rfid, status } = req.body;
+    if (!student_name || !rfid) return res.status(400).json({ error: 'Missing fields' });
 
-  if ( !student_name || !rfid  ) {
-    return res.status(400).send('Missing required fields');
-  }
-
-  try {
-    const query = `
-      INSERT INTO student_info (student_name, rfid, status)
-      VALUES ($1, $2, $3)
-      RETURNING *;
-    `;
-    const values = [student_name, rfid, status];
-
-    const result = await pool.query(query, values);
-    res.status(201).json(result);
-  } catch (error) {
-    console.error('Error inserting data:', error);
-    res.status(500).send('Error inserting data');
-  }
+    const query = `INSERT INTO student_info (student_name, rfid, status) VALUES ($1, $2, $3) RETURNING *;`;
+    const result = await pool.query(query, [student_name, rfid, status]);
+    res.status(201).json(result.rows[0]);
 });
 
-app.listen(3000, () => {
-  console.log(`API is running at http://localhost:3000`);
+app.post('/scan', async (req, res) => {
+    const { rfid } = req.body;
+    if (!rfid) return res.status(400).json({ error: 'RFID required' });
+
+    lastScannedRFID = rfid;
+    const result = await pool.query('UPDATE student_info SET status = $1 WHERE rfid = $2 RETURNING *;', [true, rfid]);
+    if (result.rowCount > 0) return res.json({ message: 'Attendance Updated', student: result.rows[0] });
+
+    res.status(404).json({ error: 'Student Not Found' });
 });
+
+app.get('/rfid', (req, res) => {
+    if (lastScannedRFID) return res.json({ rfid: lastScannedRFID });
+    res.status(404).json({ message: 'No RFID scanned yet' });
+});
+
+app.listen(port, () => console.log(`Server running at http://localhost:${port}`));

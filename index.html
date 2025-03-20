@@ -3,59 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Attendance</title>
+    <title>Student Authentication</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 {
+            color: #007bff;
+            margin-bottom: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
         }
         .list {
-            margin-bottom: 20px;
+            margin-top: 20px;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2);
         }
         th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: center;
         }
         th {
-            background-color: #f4f4f4;
+            background-color: #007bff;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        /* Popup Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+            text-align: left;
+            width: 300px;
+            position: relative;
+        }
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            outline: none;
         }
     </style>
 </head>
 <body>
-    <h1>Student Attendance</h1>
 
-    <div class="list">
-        <h2>Present Students</h2>
-        <table id="presentTable">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>RFID Tag</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+    <div class="container">
+        <h1>Student Authentication System</h1>
+
+        <div class="list">
+            <h2>Present Students</h2>
+            <table id="presentTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>RFID Tag</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <button id="openModal">Add Student</button>
+
+        <p id="responseMessage"></p>
     </div>
 
+    <!-- Popup Modal -->
+    <div id="studentModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add New Student</h2>
+            <form id="studentForm">
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" required>
+
+                <label for="rfid">RFID:</label>
+                <input type="text" id="rfid" name="rfid" required>
+
+                <label for="status">Status:</label>
+                <select id="status" name="status" required>
+                    <option value="present">Present</option>
+                    <option value="absent">Absent</option>
+                </select>
+
+                <button type="submit">Add Student</button>
+            </form>
+        </div>
+    </div>
 
     <script>
         fetch("http://localhost:3000/students")
             .then(response => response.json())
             .then(data => {
                 const presentTable = document.querySelector("#presentTable tbody");
-                console.log(data);
                 data.forEach(student => {
-                    const status = student.status?"Present":"Absent";
+                    const status = student.status ? "Present" : "Absent";
                     const row = `<tr>
-                        <td>${student.id}</td>
                         <td>${student.student_name}</td>
                         <td>${student.rfid}</td>
                         <td>${status}</td>
@@ -64,44 +171,42 @@
                 });
             });
 
-    </script>
-    <h1>Add New Student</h1>
-    <form id="studentForm">
+        setInterval(() => {
+            location.reload();
+        }, 100000);
 
-        <label for="name">Name:</label>
-        <input type="text" id="name" name="name" required>
+        const modal = document.getElementById("studentModal");
+        const openModalBtn = document.getElementById("openModal");
+        const closeModalBtn = document.querySelector(".close");
 
-        <label for="rfid">rfid:</label>
-        <input type="number" id="rfid" name="age" required>
+        openModalBtn.onclick = function() {
+            modal.style.display = "flex";
+        };
 
-        <label for="status">Status:</label>
-        <select id="status" name="status" required>
-            <option value="present">Present</option>
-            <option value="absent">Absent</option>
-        </select>
+        closeModalBtn.onclick = function() {
+            modal.style.display = "none";
+        };
 
-        <button type="submit">Add Student</button>
-    </form>
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        };
 
-    <p id="responseMessage"></p>
-
-    <script>
         const form = document.getElementById('studentForm');
         const responseMessage = document.getElementById('responseMessage');
 
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
-            const status = document.getElementById('status').value === "present"? true:false;
-            console.log(document.getElementById('status').value);
+            const status = document.getElementById('status').value === "present" ? true : false;
             const formData = {
                 student_name: document.getElementById('name').value,
                 rfid: document.getElementById('rfid').value,
                 status: status,
             };
-            console.log(JSON.stringify(formData));
             try {
                 const response = await fetch('http://localhost:3000/new_student', {
-                    method: 'PUT',
+                    method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
@@ -113,6 +218,7 @@
                     responseMessage.textContent = result.message;
                     responseMessage.style.color = 'green';
                     form.reset();
+                    modal.style.display = "none"; // Close modal after submission
                 } else {
                     const error = await response.json();
                     responseMessage.textContent = error.message || 'Failed to add student.';
